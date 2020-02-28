@@ -16,12 +16,10 @@ namespace ProcessManipulator
             // Prompt user for a PID and print out the set of active threads.
             WriteLine("***** Enter PID of process to investigate *****");
             Write("PID: ");
-            string pID = ReadLine();
-            int theProcID = int.Parse(pID);
+            int.TryParse(ReadLine(), out int processId);
 
-            GetSpecificProcess();
-            EnumThreadsForPid(theProcID);
-            EnumModsForPid(theProcID);
+            EnumThreadsForPid(processId);
+            EnumModsForPid(processId);
             StartAndKillProcess();
             ReadLine();
         }
@@ -29,102 +27,76 @@ namespace ProcessManipulator
         {
             // Get all the processes on the local machine, ordered by
             // PID.
-            var runningProcs = from proc in GetProcesses(".") orderby proc.Id select proc;
+            var runningProcesses = from process in GetProcesses(".") orderby process.Id select process;
 
             // Print out PID and name of each process.
-            foreach (var p in runningProcs)
-            {
-                string info = $"-> PID: {p.Id}\tName: {p.ProcessName}";
-                WriteLine(info);
-            }
+            foreach (Process p in runningProcesses)
+                WriteLine($"-> PID: {p.Id}" +
+                    $"\tName: {p.ProcessName}");
+
             WriteLine("************************************\n");
         }
-        // If there is no process with the PID of 987, a runtime exception will be thrown.
-        static void GetSpecificProcess()
+
+        static Process GetSpecificProcess(int processId)
         {
+            Process process = null;
             try
             {
-                Process theProc = GetProcessById(987);
+                process = GetProcessById(processId);
             }
             catch (ArgumentException ex)
             {
                 WriteLine(ex.Message);
             }
+            return process;
         }
-        static void EnumThreadsForPid(int pID)
+        static void EnumThreadsForPid(int processId)
         {
-            Process theProc;
-            try
-            {
-                theProc = GetProcessById(pID);
-            }
-            catch (ArgumentException ex)
-            {
-                WriteLine(ex.Message);
-                return;
-            }
+            Process process = GetSpecificProcess(processId);
 
             // List out stats for each thread in the specified process.
-            WriteLine("Here are the threads used by: {0}", theProc.ProcessName);
-            ProcessThreadCollection theThreads = theProc.Threads;
+            WriteLine($"Here are the threads used by {process.ProcessName}");
 
-            foreach (ProcessThread pt in theThreads)
-            {
-                string info =
-                    $"-> Thread ID: {pt.Id}\tStart Time: {pt.StartTime.ToShortTimeString()}\tPriority: {pt.PriorityLevel}";
-                WriteLine(info);
-            }
+            ProcessThreadCollection threads = process.Threads;
+
+            foreach (ProcessThread thread in threads)
+                WriteLine($"-> Thread ID: {thread.Id}" +
+                    $"\tStart Time: {thread.StartTime.ToShortTimeString()}" +
+                    $"\tPriority: {thread.PriorityLevel}");
+
             WriteLine("************************************\n");
         }
-        static void EnumModsForPid(int pID)
-        {
-            Process theProc;
-            try
-            {
-                theProc = GetProcessById(pID);
-            }
-            catch (ArgumentException ex)
-            {
-                WriteLine(ex.Message);
-                return;
-            }
 
-            WriteLine("Here are the loaded modules for: {0}", theProc.ProcessName);
-            ProcessModuleCollection theMods = theProc.Modules;
-            foreach (ProcessModule pm in theMods)
-            {
-                string info = $"-> Mod Name: {pm.ModuleName}";
-                WriteLine(info);
-            }
+        static void EnumModsForPid(int processId)
+        {
+            Process process = GetSpecificProcess(processId);
+
+            WriteLine($"Here are the loaded modules for {process.ProcessName}");
+
+            ProcessModuleCollection modules = process.Modules;
+            foreach (ProcessModule module in modules)
+                WriteLine($"-> Mod Name: {module.ModuleName}");
+
             WriteLine("************************************\n");
         }
         static void StartAndKillProcess()
         {
-            Process ffProc = null;
-
-            // Launch Firefox, and go to Waystar!
+            // Launch Firefox, and go to my site!
             try
             {
                 ProcessStartInfo startInfo =
-                    new ProcessStartInfo("FireFox.exe", "www.jacobarchambault.azurewebsites.net")
+                    new ProcessStartInfo("FireFox.exe", "jacobarchambault.azurewebsites.net")
                     {
                         WindowStyle = ProcessWindowStyle.Maximized
                     };
 
-                ffProc = Start(startInfo);
-            }
-            catch (InvalidOperationException ex)
-            {
-                WriteLine(ex.Message);
-            }
+                Process firefox = Start(startInfo);
 
-            Write("--> Hit enter to kill {0}...", ffProc.ProcessName);
-            ReadLine();
+                Write($"--> Hit enter to kill {firefox.ProcessName}");
+                ReadLine();
 
-            // Kill the FireFox.exe process.
-            try
-            {
-                ffProc.Kill();
+                // Kill the FireFox.exe process.
+                firefox.Kill();
             }
             catch (InvalidOperationException ex)
             {
