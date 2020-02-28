@@ -1,126 +1,125 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Diagnostics;
+using System.Linq;
+using static System.Console;
+using static System.Diagnostics.Process;
 
 namespace ProcessManipulator
 {
     class Program
     {
-        static void Main(string[] args)
+        static void Main()
         {
-            Console.WriteLine("***** Fun with Processes *****\n");
+            WriteLine("***** Fun with Processes *****\n");
             ListAllRunningProcesses();
 
             // Prompt user for a PID and print out the set of active threads.
-            Console.WriteLine("***** Enter PID of process to investigate *****");
-            Console.Write("PID: ");
-            string pID = Console.ReadLine();
+            WriteLine("***** Enter PID of process to investigate *****");
+            Write("PID: ");
+            string pID = ReadLine();
             int theProcID = int.Parse(pID);
 
+            GetSpecificProcess();
             EnumThreadsForPid(theProcID);
             EnumModsForPid(theProcID);
             StartAndKillProcess();
-            Console.ReadLine();
+            ReadLine();
         }
         static void ListAllRunningProcesses()
         {
             // Get all the processes on the local machine, ordered by
             // PID.
-            var runningProcs = from proc in Process.GetProcesses(".") orderby proc.Id select proc;
+            var runningProcs = from proc in GetProcesses(".") orderby proc.Id select proc;
 
             // Print out PID and name of each process.
             foreach (var p in runningProcs)
             {
                 string info = $"-> PID: {p.Id}\tName: {p.ProcessName}";
-                Console.WriteLine(info);
+                WriteLine(info);
             }
-            Console.WriteLine("************************************\n");
+            WriteLine("************************************\n");
         }
         // If there is no process with the PID of 987, a runtime exception will be thrown.
         static void GetSpecificProcess()
         {
-            Process theProc = null;
             try
             {
-                theProc = Process.GetProcessById(987);
+                Process theProc = GetProcessById(987);
             }
             catch (ArgumentException ex)
             {
-                Console.WriteLine(ex.Message);
+                WriteLine(ex.Message);
             }
         }
         static void EnumThreadsForPid(int pID)
         {
-            Process theProc = null;
+            Process theProc;
             try
             {
-                theProc = Process.GetProcessById(pID);
+                theProc = GetProcessById(pID);
             }
             catch (ArgumentException ex)
             {
-                Console.WriteLine(ex.Message);
+                WriteLine(ex.Message);
                 return;
             }
 
             // List out stats for each thread in the specified process.
-            Console.WriteLine("Here are the threads used by: {0}", theProc.ProcessName);
+            WriteLine("Here are the threads used by: {0}", theProc.ProcessName);
             ProcessThreadCollection theThreads = theProc.Threads;
 
             foreach (ProcessThread pt in theThreads)
             {
                 string info =
                     $"-> Thread ID: {pt.Id}\tStart Time: {pt.StartTime.ToShortTimeString()}\tPriority: {pt.PriorityLevel}";
-                Console.WriteLine(info);
+                WriteLine(info);
             }
-            Console.WriteLine("************************************\n");
+            WriteLine("************************************\n");
         }
         static void EnumModsForPid(int pID)
         {
-            Process theProc = null;
+            Process theProc;
             try
             {
-                theProc = Process.GetProcessById(pID);
+                theProc = GetProcessById(pID);
             }
             catch (ArgumentException ex)
             {
-                Console.WriteLine(ex.Message);
+                WriteLine(ex.Message);
                 return;
             }
 
-            Console.WriteLine("Here are the loaded modules for: {0}", theProc.ProcessName);
+            WriteLine("Here are the loaded modules for: {0}", theProc.ProcessName);
             ProcessModuleCollection theMods = theProc.Modules;
             foreach (ProcessModule pm in theMods)
             {
                 string info = $"-> Mod Name: {pm.ModuleName}";
-                Console.WriteLine(info);
+                WriteLine(info);
             }
-            Console.WriteLine("************************************\n");
+            WriteLine("************************************\n");
         }
         static void StartAndKillProcess()
         {
             Process ffProc = null;
 
-            // Launch Firefox, and go to facebook!
+            // Launch Firefox, and go to Waystar!
             try
             {
                 ProcessStartInfo startInfo =
-                    new ProcessStartInfo("FireFox.exe", "www.facebook.com")
+                    new ProcessStartInfo("FireFox.exe", "www.jacobarchambault.azurewebsites.net")
                     {
                         WindowStyle = ProcessWindowStyle.Maximized
                     };
 
-                ffProc = Process.Start(startInfo);
+                ffProc = Start(startInfo);
             }
             catch (InvalidOperationException ex)
             {
-                Console.WriteLine(ex.Message);
+                WriteLine(ex.Message);
             }
 
-            Console.Write("--> Hit enter to kill {0}...", ffProc.ProcessName);
-            Console.ReadLine();
+            Write("--> Hit enter to kill {0}...", ffProc.ProcessName);
+            ReadLine();
 
             // Kill the FireFox.exe process.
             try
@@ -129,7 +128,7 @@ namespace ProcessManipulator
             }
             catch (InvalidOperationException ex)
             {
-                Console.WriteLine(ex.Message);
+                WriteLine(ex.Message);
             }
         }
 
